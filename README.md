@@ -1,11 +1,11 @@
 # MangoWall
 In development firewall: detect ddos attacks, web interface, terminal interface. Root needed
 
-#Setup
+# Setup
 <pre>python setup.py</pre>
 
-#Login
+# Login
 <img src="https://i.imgur.com/hHqa59G.jpg">
 
-#Panel
+# Panel
 <img src="https://i.imgur.com/87XrVEA.png">
