@@ -115,14 +115,78 @@ def banner():
                     |___/ """
 
 
+def iptables():
+  inter = "eth0"
+  os.system('iptables -F')
+  interface = raw_input('[user: ' + inter + ']: ') or inter
+  os.system('iptables -A INPUT -p tcp -m tcp --dport 80 -j ACCEPT')
+  os.system('iptables -A INPUT -p tcp -m tcp --dport 443 -j ACCEPT')
+  ssh = raw_input('Do you want to open port: 22 [y/n]> ')
+  #BLOCK#
+  if ssh == "y":
+    os.system('iptables -A INPUT -p tcp -m tcp --dport 22 -j ACCEPT')
+  else:
+    os.system('iptables -A INPUT -p tcp -m tcp --dport 22 -j DROP')
+  #BLOCK#
+  os.system('iptables -A INPUT -p udp -s 0/0 -i %s --dport 33435:33525 -j DROP' % (interface))
+  os.system('iptables -A INPUT -p tcp --syn -j DROP')
+  os.system('iptables -A INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH SYN -j DROP')
+  os.system('iptables -A INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN -j DROP')
+  os.system('iptables -A INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH ACK -j DROP')
+  os.system('iptables -A INPUT -m conntrack --ctstate INVALID -p tcp --tcp-flags ! SYN,RST,ACK,FIN,URG,PSH SYN,RST,ACK,FIN,URG,PSH -j DROP')
+  os.system('iptables -A INPUT -m conntrack --ctstate NEW -p tcp --tcp-flags SYN,RST,ACK,FIN,URG,PSH FIN,URG,PSH -j DROP')
+  os.system('iptables -A INPUT -p ICMP --icmp-type echo-request -m length --length 60:65535 -j ACCEPT')
+  os.system('iptables -A FORWARD -p icmp --icmp-type echo-request -m connlimit --connlimit 1/s -j accept')
+  os.system('iptables -A FORWARD -p icmp --icmp-type echo-request -j DROP')
+  os.system('iptables -A INPUT -p UDP -f -j DROP')
+  os.system('iptables -A INPUT -p TCP --syn -m connlimit --connlimit-above 9 -j DROP')
+  os.system('iptables -A INPUT -m pkttype --pkt-type broadcast -j DROP')
+  os.system('iptables -A INPUT -p ICMP --icmp-type echo-request -m pkttype --pkttype broadcast -j DROP')
+  os.system('iptables -A INPUT -p ICMP --icmp-type echo-request -m limit --limit 3/s -j ACCEPT')
+  os.system('iptables -A INPUT -p icmp -m icmp --icmp-type address-mask-request -j DROP')
+  os.system('iptables -A INPUT -p icmp -m icmp --icmp-type timestamp-request -j DROP')
+  os.system('iptables -A INPUT -p icmp -m icmp -m limit --limit 1/second -j ACCEPT')
+  os.system('iptables -A INPUT -p UDP --dport 7 -j DROP')
+  os.system('iptables -A INPUT -p UDP --dport 19 -j DROP')
+  os.system('iptables -A INPUT -p UDP --dport 135:139 -j DROP')
+  os.system('iptables -A INPUT -p TCP --dport 135:139 -j DROP')
+  os.system('iptables -A INPUT -p TCP --syn -m connlimit --connlimit-above 3 -j DROP')
+  os.system('iptables -A INPUT -p UDP -m pkttype --pkt-type broadcast -j DROP')
+  os.system('iptables -A INPUT -p UDP -m limit --limit 3/s -j ACCEPT')
+  os.system('iptables -A INPUT -p ICMP -f -j DROP')
+  os.system('iptables -A INPUT -p tcp --dport 12345:12346 -j DROP')
+  os.system('iptables -A INPUT -p udp --dport 12345:12346 -j DROP')
+  os.system('iptables -A INPUT -p tcp --tcp-flags SYN,ACK,FIN,RST RST -m limit --limit 1/s -j ACCEPT')
+  os.system('iptables -A INPUT -p tcp --dport 31337 -j DROP')
+  os.system('iptables -A INPUT -p udp --dport 31337 -j DROP')
+  os.system('iptables -A INPUT -m state --state INVALID -j DROP')
+  os.system('iptables -A FORWARD -m state --state INVALID -j DROP')
+  os.system('iptables -A OUTPUT -m state --state INVALID -j DROP')
+  os.system('iptables -A INPUT -m state --state INVALID -j DROP')
+  os.system('iptables -I INPUT -p icmp -i ' + interface + ' -m ttl --ttl-gt 160 -j DROP')
+  os.system('iptables -I INPUT -p udp -i ' + interface + ' -m ttl --ttl-gt 160 -j DROP')
+  os.system('iptables -I INPUT -p tcp -i ' + interface + ' -m ttl --ttl-gt 160 -j DROP')
+  os.system('iptables -A INPUT -p tcp -m tcp --tcp-flags RST RST -m limit --limit 2/second --limit-burst 2 -j ACCEPT')
+  os.system('iptables -I INPUT -p tcp -m state --state NEW --dport 80 -m recent --name slowloris --set')
+  os.system('iptables -I INPUT -p tcp -m state --state NEW --dport 80 -m recent --name slowloris --update --seconds 15 --hitcount 10 -j DROP')
+  os.system('iptables -A INPUT -p tcp --dport 80 -j ACCEPT')
+  os.system('iptables -I INPUT -p ICMP --icmp-type 8 -j REJECT')
+  os.system('iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP')
+  os.system('iptables -A OUTPUT -p icmp --icmp-type 8 -j DROP')
+  os.system('iptables -I INPUT -i ech0 -p icmp -s 0/0 -d 0/0 -j DROP')
+  os.system('iptables -I INPUT -i ech0 -p icmp -s 0/0 -d 0/0 -j ACCEPT')
+  os.system('iptables -I INPUT -p icmp --icmp-type 8 -j DROP')
+  os.system('iptables-save > /etc/iptables.rules')
+
 def console():
 	yesr = "yes"
 	yen = raw_input('[start console?: ' + yesr + ']: ') or yesr
 	if yen == "yes":
 		os.system('chmod +x console; ./console')
 	else:
-		print "Finished, console was not executed however you can visit webpage: localhost:%s" % (port)
+		print "Finished, console was not executed however you can visit webpage: localhost"
 
 banner()
 main()
+iptables()
 console()
